@@ -12,3 +12,8 @@ with open('database.json', 'w') as json_file:
     json.dump(exchange_rates, json_file, indent=4)
 
 print("Данные успешно записаны в файл database.json")
+
+from openexchangerate import OpenExchangeRates
+
+client = OpenExchangeRates(api_key="bc1qra7aw9jlr4xvlh70aak2fgu9jfnjjal684ak8n")
+print(client.latest())

@@ -99,8 +99,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.Sum1BOX.setCurrentText(sum2box_value)
         self.Sum2BOX.setCurrentText(sum1box_value)
 
-        self.Sum1.setText("")
-        self.Sum2.setText("")
+        self.Sum1.setText("0")
+        self.Sum2.setText("0")
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
