@@ -1,9 +1,10 @@
 from UI import Ui_MainWindow
 from PyQt5.QtWidgets import QMainWindow, QApplication
+from PyQt5.QtGui import QRegExpValidator
+from PyQt5.QtCore import QRegExp
 import decimal
-import requests
 import sys
-from openexchangerate import OpenExchangeRates
+import json
 
 class MainWindow(QMainWindow, Ui_MainWindow):
     def __init__(self, parent=None):
@@ -11,15 +12,35 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.setupUi(self)
         self.setWindowTitle('ConvertPlus')
 
+        # Загружаем валюты из JSON файла
+        self.load_currencies()
+
+        # Устанавливаем валидатор для ввода только чисел с плавающей точкой и двумя знаками после запятой
+        regex = QRegExp("^[0-9]*\.?[0-9]{0,2}$")
+        validator = QRegExpValidator(regex)
+        self.Sum1.setValidator(validator)
+        self.Sum2.setValidator(validator)
+
         # Подключаем сигналы для автоматической конвертации
-        self.Sum1.textChanged.connect(self.converter_from_sum1)  # При изменении текста в Sum1
+        self.Sum1.editingFinished.connect(self.converter_from_sum1)  # При завершении редактирования текста в Sum1
         self.Sum1BOX.currentIndexChanged.connect(self.converter_from_sum1)  # При изменении валюты в Sum1BOX
         self.Sum2BOX.currentIndexChanged.connect(self.converter_from_sum1)  # При изменении валюты в Sum2BOX
 
-        self.Sum2.textChanged.connect(self.converter_from_sum2)  # При изменении текста в Sum2
+        self.Sum2.editingFinished.connect(self.converter_from_sum2)  # При завершении редактирования текста в Sum2
 
         # Кнопка обмена значениями
         self.ButtonSWAP.clicked.connect(self.swap_values)
+
+    def load_currencies(self):
+        try:
+            with open('database.json', 'r') as file:
+                data = json.load(file)
+                self.currencies = data[0]
+                currencies = list(self.currencies.keys())
+                self.Sum1BOX.addItems(currencies)
+                self.Sum2BOX.addItems(currencies)
+        except Exception as e:
+            print(f"Ошибка при загрузке валют: {str(e)}")
 
     def converter_from_sum1(self):
         try:
@@ -27,24 +48,22 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             from_currency = self.Sum1BOX.currentText()  # Выбранная валюта
             to_currency = self.Sum2BOX.currentText()  # Выбранная валюта
 
-            # Получаем курсы валют с помощью API Open Exchange Rates
-            api_key = '19bdf38d63854d1e8529f68b2dfc8399'  # API ключ
-            response = requests.get(f'https://openexchangerates.org/api/latest.json?app_id={api_key}')
-            response.raise_for_status()  # Проверка на успешность запроса
-            data = response.json()
-
-            if from_currency in data['rates'] and to_currency in data['rates']:
-                from_rate = decimal.Decimal(data['rates'][from_currency])
-                to_rate = decimal.Decimal(data['rates'][to_currency])
+            if from_currency in self.currencies and to_currency in self.currencies:
+                from_rate = decimal.Decimal(self.currencies[from_currency])
+                to_rate = decimal.Decimal(self.currencies[to_currency])
                 converted_amount = (amount / from_rate) * to_rate
 
-                self.Sum2.setText(f"{converted_amount:.2f}")
+                # Округляем до двух знаков после десятичной точки
+                converted_amount = converted_amount.quantize(decimal.Decimal('1.00'))
+
+                # Удаляем ненужные нули после десятичной точки
+                converted_amount = converted_amount.normalize()
+
+                self.Sum2.setText(f"{converted_amount}")
             else:
                 self.Sum2.setText("Ошибка: валюта не найдена")
         except ValueError:
             self.Sum2.setText("Ошибка: неверный ввод")
-        except requests.RequestException as e:
-            self.Sum2.setText(f"Ошибка API: {str(e)}")
         except Exception as e:
             self.Sum2.setText(f"Ошибка: {str(e)}")
 
@@ -54,39 +73,34 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             from_currency = self.Sum2BOX.currentText()  # Выбранная валюта
             to_currency = self.Sum1BOX.currentText()  # Выбранная валюта
 
-            # Получаем курсы валют с помощью API Open Exchange Rates
-            api_key = '19bdf38d63854d1e8529f68b2dfc8399'  # Ваш API ключ
-            response = requests.get(f'https://openexchangerates.org/api/latest.json?app_id={api_key}')
-            response.raise_for_status()  # Проверка на успешность запроса
-            data = response.json()
-
-            if from_currency in data['rates'] and to_currency in data['rates']:
-                from_rate = decimal.Decimal(data['rates'][from_currency])
-                to_rate = decimal.Decimal(data['rates'][to_currency])
+            if from_currency in self.currencies and to_currency in self.currencies:
+                from_rate = decimal.Decimal(self.currencies[from_currency])
+                to_rate = decimal.Decimal(self.currencies[to_currency])
                 converted_amount = (amount / from_rate) * to_rate
 
-                self.Sum1.setText(f"{converted_amount:.2f}")
+                # Округляем до двух знаков после десятичной точки
+                converted_amount = converted_amount.quantize(decimal.Decimal('1.00'))
+
+                # Удаляем ненужные нули после десятичной точки
+                converted_amount = converted_amount.normalize()
+
+                self.Sum1.setText(f"{converted_amount}")
             else:
                 self.Sum1.setText("Ошибка: валюта не найдена")
         except ValueError:
             self.Sum1.setText("Ошибка: неверный ввод")
-        except requests.RequestException as e:
-            self.Sum1.setText(f"Ошибка API: {str(e)}")
         except Exception as e:
             self.Sum1.setText(f"Ошибка: {str(e)}")
 
     def swap_values(self):
-        sum1_value = self.Sum1.text()
-        sum2_value = self.Sum2.text()
-
         sum1box_value = self.Sum1BOX.currentText()
         sum2box_value = self.Sum2BOX.currentText()
 
-        self.Sum1.setText(sum2_value)
-        self.Sum2.setText(sum1_value)
-
         self.Sum1BOX.setCurrentText(sum2box_value)
         self.Sum2BOX.setCurrentText(sum1box_value)
+
+        self.Sum1.setText("")
+        self.Sum2.setText("")
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

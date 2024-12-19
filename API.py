@@ -11,4 +11,4 @@ exchange_rates = client.latest()
 with open('database.json', 'w') as json_file:
     json.dump(exchange_rates, json_file, indent=4)
 
-print("Данные успешно записаны в файл exchange_rates.json")
+print("Данные успешно записаны в файл database.json")
