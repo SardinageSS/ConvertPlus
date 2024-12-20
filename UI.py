@@ -14,9 +14,9 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(420, 330)
-        MainWindow.setMinimumSize(QtCore.QSize(420, 330))
-        MainWindow.setMaximumSize(QtCore.QSize(420, 330))
+        MainWindow.resize(400, 330)
+        MainWindow.setMinimumSize(QtCore.QSize(400, 330))
+        MainWindow.setMaximumSize(QtCore.QSize(400, 330))
         font = QtGui.QFont()
         font.setFamily("Mistral")
         font.setPointSize(20)
@@ -36,7 +36,7 @@ class Ui_MainWindow(object):
         self.ConvertPlus.setGeometry(QtCore.QRect(0, 0, 400, 100))
         font = QtGui.QFont()
         font.setFamily("Cooper Black")
-        font.setPointSize(40)
+        font.setPointSize(36)
         font.setBold(False)
         font.setItalic(True)
         font.setUnderline(False)
