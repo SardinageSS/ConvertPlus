@@ -4,7 +4,7 @@ from PyQt5.QtGui import QRegExpValidator
 from PyQt5.QtCore import QRegExp
 import decimal
 import sys
-import json
+import sqlite3
 
 class MainWindow(QMainWindow, Ui_MainWindow):
     def __init__(self, parent=None):
@@ -12,14 +12,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.setupUi(self)
         self.setWindowTitle('ConvertPlus')
 
-        # Загружаем валюты из JSON файла
+        # Загружаем валюты из SQLite базы данных
         self.load_currencies()
 
         # Устанавливаем валидатор для ввода только чисел с плавающей точкой и двумя знаками после запятой
-        regex = QRegExp("^[0-9]*\.?[0-9]{0,2}$")
+        regex = QRegExp(r"^[0-9]*\.?[0-9]{0,2}$")
         validator = QRegExpValidator(regex)
         self.Sum1.setValidator(validator)
         self.Sum2.setValidator(validator)
+        
+        self.Sum1.setText("0")
+        self.Sum2.setText("0")
 
         # Подключаем сигналы для автоматической конвертации
         self.Sum1.editingFinished.connect(self.converter_from_sum1)  # При завершении редактирования текста в Sum1
@@ -33,12 +36,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def load_currencies(self):
         try:
-            with open('database.json', 'r') as file:
-                data = json.load(file)
-                self.currencies = data[0]
-                currencies = list(self.currencies.keys())
-                self.Sum1BOX.addItems(currencies)
-                self.Sum2BOX.addItems(currencies)
+            conn = sqlite3.connect('currency_rates.db')
+            cursor = conn.cursor()
+            cursor.execute("SELECT currency_code, rate FROM currency_rates")
+            rows = cursor.fetchall()
+            self.currencies = {currency: rate for currency, rate in rows}
+            currencies = list(self.currencies.keys())
+            self.Sum1BOX.addItems(currencies)
+            self.Sum2BOX.addItems(currencies)
+            conn.close()
         except Exception as e:
             print(f"Ошибка при загрузке валют: {str(e)}")
 
